@@ -9,7 +9,9 @@ import android.graphics.Color
 import android.graphics.Rect
 import android.os.Bundle
 import android.text.Editable
+import android.text.InputType
 import android.text.TextWatcher
+import android.text.method.ScrollingMovementMethod
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
@@ -85,18 +87,14 @@ class Main : ExtensionAPI() {
             setOnClickListener { showConverterDialog(activity) }
         }
 
-        // Base margins
-        val gearBaseMargin = 200
-        val finderBaseMargin = 300 // Finder bar sits a bit higher normally
-
+        val originalBottomMargin = 200
         val params = FrameLayout.LayoutParams(150, 150).apply {
             gravity = Gravity.BOTTOM or Gravity.END
-            setMargins(0, 0, 50, gearBaseMargin)
+            setMargins(0, 0, 50, originalBottomMargin)
         }
 
         val rootView = activity.findViewById<ViewGroup>(android.R.id.content)
         
-        // --- KEYBOARD DETECTION ---
         rootView.viewTreeObserver.addOnGlobalLayoutListener {
             val r = Rect()
             rootView.getWindowVisibleDisplayFrame(r)
@@ -105,9 +103,9 @@ class Main : ExtensionAPI() {
             val isKeyboardOpen = keypadHeight > screenHeight * 0.15
 
             if (isKeyboardOpen) {
-                params.bottomMargin = gearBaseMargin + keypadHeight
+                params.bottomMargin = originalBottomMargin + keypadHeight
             } else {
-                params.bottomMargin = gearBaseMargin
+                params.bottomMargin = originalBottomMargin
             }
             fab.layoutParams = params
 
@@ -115,9 +113,9 @@ class Main : ExtensionAPI() {
             if (finderBar != null) {
                 val finderParams = finderBar.layoutParams as FrameLayout.LayoutParams
                 if (isKeyboardOpen) {
-                    finderParams.bottomMargin = finderBaseMargin + keypadHeight
+                    finderParams.bottomMargin = 300 + keypadHeight
                 } else {
-                    finderParams.bottomMargin = finderBaseMargin
+                    finderParams.bottomMargin = 300
                 }
                 finderBar.layoutParams = finderParams
             }
@@ -134,7 +132,15 @@ class Main : ExtensionAPI() {
     }
 
     private fun showConverterDialog(activity: Activity) {
-        val inputField = EditText(activity).apply { hint = "Enter text/hex/dec here..." }
+        val inputField = EditText(activity).apply { 
+            hint = "Enter text/hex/dec here..."
+            maxLines = 2
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_MULTI_LINE
+            isVerticalScrollBarEnabled = true
+            movementMethod = ScrollingMovementMethod.getInstance()
+            scrollBarStyle = View.SCROLLBARS_INSIDE_INSET
+        }
+
         val statsView = TextView(activity).apply {
             text = "0 chars"
             textSize = 12f
@@ -152,9 +158,16 @@ class Main : ExtensionAPI() {
             text = "Result will appear here (Tap to copy)"
             setPadding(40, 40, 40, 40)
             textSize = 18f
+            
+            maxLines = 2
+            isVerticalScrollBarEnabled = true
+            movementMethod = ScrollingMovementMethod.getInstance()
+            scrollBarStyle = View.SCROLLBARS_INSIDE_INSET
+
             val outValue = TypedValue()
             activity.theme.resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)
             setBackgroundResource(outValue.resourceId)
+            
             setOnClickListener {
                 val textToCopy = text.toString()
                 if (textToCopy.contains("Result will appear here")) {
